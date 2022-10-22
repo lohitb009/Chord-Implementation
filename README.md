@@ -1,2 +1,2 @@
-# Chord-Peer-To-Peer
+# Chord-Implementation
 COP5615 DOSP 
