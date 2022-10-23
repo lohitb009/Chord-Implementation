@@ -12,8 +12,17 @@ The objective for the project is to implement netowrk join and routing algorithm
 
 ### Run Project:
 Run the following commands for the project <br>
+1. Compile the project
 ```
+c(node).
+c(main).
+c(hopCalculator).
 ```
+2. Call the main function i.e. 
+```
+main:chord_start(100,3).
+```
+where ```100 represents NumberofNodes``` and ```3 represents NumberOfRequests```.
 
 ### Code Explanation:
 Our project will start from the ```chord_start(TotalNodes,Requests)``` function.<br>
@@ -40,6 +49,11 @@ Our message distribution from a random node to the specified nodes work upon the
 If the <i>specified key isn't available</i> inside the finger table, we will delegate the call to <i> the nearest responsible node </i> to distribute the message in an efficient way.
 
 ### Working Objectives:
+1. We are able to establish the chord network
+2. We are able to populate the finger tables for each node (i.e. ActorPid) in the network.
+3. We are able to achieve the communication from starting node to the target node in the chord setup.
+4. We are able to achieve the objective of closest node-id handling the responsibility calls of an inactive node-id.
 
+### Results Explanation:
 
 ### Largest Achievable Network:
