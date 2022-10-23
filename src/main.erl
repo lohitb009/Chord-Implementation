@@ -13,9 +13,10 @@ totalSpaces(Power, TotalNodes) ->
 
 chord_start(TotalNodes, NumRequests) ->
 
+  HopCalc_PID = hopCalculator:startCalc(0,0),
   TotalSpaces = totalSpaces(1, TotalNodes),
 %%  io:format("TotalSpaces is ~p ~n ", [TotalSpaces]),
-  Nodes_list = add_nodes(TotalNodes, round(TotalSpaces), no_peers, [], []),
+  Nodes_list = add_nodes(TotalNodes, round(TotalSpaces), no_peers, [], [], HopCalc_PID),
   io:format("Full List is ~p ~n ", [Nodes_list]),
   Nodes_list_wc = gen_ft(1, TotalNodes+1, Nodes_list, []),
 %%  send ft to all nodes
@@ -54,33 +55,33 @@ send_ft2(Iter, Nodes_list_wc, Len, NumRequests, Nodes_list) ->
   Curr_node_pid ! {send_requests, NumRequests},
   send_ft2(Iter+1, Nodes_list_wc, Len, NumRequests, Nodes_list).
 
-add_nodes(0, _, _, Nodes_list, _) ->
+add_nodes(0, _, _, Nodes_list, _, _) ->
   lists:sort(Nodes_list);
-add_nodes(TotalNodes, TotalSpaces, no_peers, Nodes_list, Occupied_Ids) ->
+add_nodes(TotalNodes, TotalSpaces, no_peers, Nodes_list, Occupied_Ids, HopCalc_PID) ->
   Random_ID = rand:uniform(1000000000),
   Hashed_data = crypto:hash(sha, <<Random_ID>>),
   <<Hash_to_int:160/integer>> = Hashed_data,
   Identifier = Hash_to_int rem TotalSpaces,
 
-  NodePID = node:startLink(Identifier, null, null, null, TotalSpaces, null, null),
+  NodePID = node:startLink(Identifier, null, null, null, TotalSpaces, null, null, HopCalc_PID),
 
-  add_nodes(TotalNodes - 1, TotalSpaces, {Identifier, self()}, Nodes_list ++ [[Identifier, NodePID]], Occupied_Ids ++ [Identifier]);
+  add_nodes(TotalNodes - 1, TotalSpaces, {Identifier, self()}, Nodes_list ++ [[Identifier, NodePID]], Occupied_Ids ++ [Identifier], HopCalc_PID);
 
-add_nodes(TotalNodes, TotalSpaces, Peer = {Peer_ID, Peer_PID}, Nodes_list, Occupied_Ids) ->
+add_nodes(TotalNodes, TotalSpaces, Peer = {Peer_ID, Peer_PID}, Nodes_list, Occupied_Ids, HopCalc_PID) ->
   Random_ID = rand:uniform(1000000000),
   Hashed_data = crypto:hash(sha, <<Random_ID>>),
   <<Hash_to_int:160/integer>> = Hashed_data,
   Identifier = Hash_to_int rem TotalSpaces,
 
-  NodePID = node:startLink(Identifier, null, {Identifier, self()}, null, TotalSpaces, null, null),
+  NodePID = node:startLink(Identifier, null, {Identifier, self()}, null, TotalSpaces, null, null, HopCalc_PID),
   Already_occupied_id = lists:member(Identifier, Occupied_Ids),
   if
     Already_occupied_id ->
 %%      io:format("~p is Already occupied id in ~p ~n", [Identifier, Occupied_Ids]),
-      add_nodes(TotalNodes, TotalSpaces, Peer, Nodes_list, Occupied_Ids);
+      add_nodes(TotalNodes, TotalSpaces, Peer, Nodes_list, Occupied_Ids, HopCalc_PID);
     true ->
 %%      io:format("~p is Not occupied id in ~p ~n", [Identifier, Occupied_Ids]),
-      add_nodes(TotalNodes - 1, TotalSpaces, Peer, Nodes_list ++ [[Identifier, NodePID]], Occupied_Ids ++ [Identifier])
+      add_nodes(TotalNodes - 1, TotalSpaces, Peer, Nodes_list ++ [[Identifier, NodePID]], Occupied_Ids ++ [Identifier], HopCalc_PID)
   end.
 
 gen_ft(TotalNodes, TotalNodes, Nodes_list, Nodes_list_wc) ->
