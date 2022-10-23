@@ -10,15 +10,117 @@
 -author("User").
 
 %% API
--export([startLink/4, main_loop/4]).
+-export([startLink/8, main_loop/8]).
 
-startLink(ChordId, Pred, Succ, FT) ->
-  ActorPid = spawn_link(?MODULE, main_loop, [ChordId, Pred, Succ, FT]),
+startLink(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID) ->
+  ActorPid = spawn_link(?MODULE, main_loop, [ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID]),
   %%% io:format("ActorPID Started At : ~p~n",[ActorPid]),
   ActorPid.
 
-main_loop(ChordId, Pred, Succ, FT) ->
-  io:format("Node is : ~p ~n",[self()]),
+main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID) ->
+%%  io:format("Node is : ~p ~n", [self()]),
+  receive
+    {ok, Finger, NdList, Iter} ->
+%%      io:format("Fingers is : ~p ~n", [Finger]),
+%%      io:format("Iter is : ~p ~n", [Iter]),
+%%      io:format("New Ndlist is : ~p ~n", [NdList]),
+%%      io:format("Chord ID: ~p Array_ID: ~p ~n",[ChordId, Iter]),
+      main_loop(ChordId, Pred, Succ, Finger, TotalSpaces, NdList, Iter, HopCalc_PID);
+
+%%    {update_ft, Finger, NdList, ArrayID} ->
+%%      io:format("FT is : ~p ~n", [Finger]),
+%%      io:format("Ndlist is : ~p ~n", [NdList]),
+%%%%      io:format("FT is : ~p ~n",[Finger]),
+
+
+    {send_requests, NumRequests} ->
+      IDs = generate_IDs(NumRequests, TotalSpaces, []),
+%%      io:format("~p keys is : ~p ~n", [self(), IDs]),
+%%      io:format("Nodelist is : ~p ~n", [NodeList]),
+%%      timer:sleep(5000),
+      sendRequests(length(IDs), IDs, NodeList, ArrayID, FT),
+      main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID);
+%%      send_queries(Keys)
+
+    {messg, Hops, Target_ID} ->
+      if
+        Target_ID == ChordId ->
+          io:format("Reached dest, hops: ~p ~n",[Hops+1]),
+          HopCalc_PID ! {query_complete, Hops+1},
+          main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID);
+        true ->
+          Target_PID = find_target_pid(1, length(FT)+1, Target_ID, lists:sort(FT), lists:nth(2, lists:nth(1, FT)), NodeList ),
+          Target_PID ! {messg, Hops+1, Target_ID},
+          main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID)
+      end
+
+%%      if
+%%        Target_ID == ChordId
+%%      end
+  end.
+
+sendRequests(0, IDs, Nodelist, ArrayID, FT) ->
+  done;
+sendRequests(Iter, IDs, Nodelist, ArrayID, FT) ->
+%%  io:format("Array ID is : ~p ~n",[ArrayID]),
+%%  io:format("Actual ID for ID ~p is : ~p ~n", [lists:nth(Iter, IDs), find_succ2(lists:nth(Iter, IDs), 1, Nodelist, length(Nodelist)+1)]),
+  Target_ID = find_succ2(lists:nth(Iter, IDs), 1, Nodelist, length(Nodelist)+1),
+%%  impppp
+%%  io:format("~p Actual ID: ~p target_ID : ~p Curr_ID: ~p ~n", [self(), lists:nth(Iter, IDs), lists:nth(1, Target_ID), lists:nth(1,lists:nth(ArrayID, Nodelist)) ]),
+%%  io:format("Nodelist: ~p ~n", [Nodelist ]),
+  Target_PID = find_target_pid(1, length(FT)+1, lists:nth(1, Target_ID), lists:sort(FT), lists:nth(2, lists:nth(1, FT)), Nodelist ),
+
+%%  io:format("Actual ID: ~p target_ID : ~p Curr_ID: ~p target_PID: ~p ~n", [lists:nth(Iter, IDs), Target_ID, lists:nth(ArrayID, Nodelist),Target_PID ]),
+  %%  impppp
+%%  io:format("~p target_PID: ~p ~n", [self(), Target_PID ]),
+  Target_PID ! {messg, 0, lists:nth(1, Target_ID)},
+  sendRequests(Iter - 1, IDs, Nodelist, ArrayID, FT).
+%%  find_based_on_ft(1, ).
+
+find_target_pid(Len, Len, Target_ID, FT, Pred_PID, NodeList) ->
+%%  imppppp
+%%  io:format("~p I REACH HERE, pred is: ~p ~n",[self(), Pred]),
+  Pred_PID;
+find_target_pid(Iter, Len, Target_ID, FT, Pred_PID, NodeList) ->
+%%  if
+%%    Pred == null -> find_target_pid(Iter, Len, Target_ID, FT, lists:nth(Iter, FT));
+%%    true ->
+%%  end
+  Curr_ID = lists:nth(1, lists:nth(Iter, FT)),
+  Curr_PID = lists:nth(2, lists:nth(Iter, FT)),
+%%  imppppp
+%%  io:format("Nodelist: ~p ~n", [NodeList]),
+%%  io:format("~p Iter: ~p Curr_ID: ~p Target_ID: ~p ~n",[self(), Iter, Curr_ID, Target_ID]),
+  if
+    Target_ID > Curr_ID ->
+      find_target_pid(Iter+1, Len, Target_ID, FT, Curr_PID, NodeList);
+    Target_ID == Curr_ID ->
+      Curr_PID;
+    Target_ID < Curr_ID ->
+      Pred_PID;
+    true -> nothing
+  end.
+
+find_succ2(Next_id, Len, NodesList, Len) ->
+  lists:nth(1, NodesList);
+find_succ2(Next_id, ArrayID, NodesList, Len) ->
+  Curr_node = lists:nth(ArrayID, NodesList),
+  Curr_ID = lists:nth(1, Curr_node),
+%%  io:format("FS :: Curr_ID: ~p Next_ID: ~p ~n", [Curr_ID, Next_id]),
+  if
+    Curr_ID < Next_id -> find_succ2(Next_id, ArrayID + 1, NodesList, Len);
+    true -> Curr_node
+  end.
+
+generate_IDs(0, TotalSpaces, Key_List) ->
+  Key_List;
+generate_IDs(NumRequests, TotalSpaces, Key_List) ->
+  Random_ID = rand:uniform(1000000000),
+  Hashed_data = crypto:hash(sha, <<Random_ID>>),
+  <<Hash_to_int:160/integer>> = Hashed_data,
+  Identifier = Hash_to_int rem TotalSpaces,
+  generate_IDs(NumRequests - 1, TotalSpaces, Key_List ++ [Identifier]).
+
 %%  receive
 %%    {update_ft, FT_table}
 %%  end,
@@ -36,5 +138,5 @@ main_loop(ChordId, Pred, Succ, FT) ->
 %%    stab ->
 %%
 %%  end,
-  main_loop(ChordId, Pred, Succ, FT).
+
 %%  done.
