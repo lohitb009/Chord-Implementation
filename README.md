@@ -3,7 +3,7 @@
 <i>Lohit Bhambri (lohit.bhambri@ufl.edu)</i><br>
 
 ### Problem Statement:
-The objective for the project is to implement netowrk join and routing algorithm referred as Chord.<br>
+The objective for the project is to implement network join and routing algorithm referred as Chord.<br>
 <p>
 1. Chord is a protocol and algorithm for a peer-to-peer distributed hash table.<br> 
 2. A distributed hash table stores key-value pairs by assigning keys to different nodes; a node will store the values for all the keys for which it is responsible.<br>
