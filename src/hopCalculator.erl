@@ -21,7 +21,7 @@ startCalc(Hops, Queries_Completed, NumRequests) ->
 calculator(Hops, Queries_Completed, NumRequests) ->
   receive
     {query_complete, Hops_Taken} ->
-%%      To account for replication in detection of query completion
+%%      To account for replication in detection of query completion, replication factor used in main.erl
       Average_Hops = ((Hops+Hops_Taken) / (Queries_Completed+1))/(?ReplicationFactor),
       io:format("Hops Average at Current Time: ~p ~n",[Average_Hops]),
       calculator(Hops+Hops_Taken, Queries_Completed+1, NumRequests)
