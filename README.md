@@ -18,13 +18,13 @@ c(node).
 c(main).
 c(hopCalculator).
 ```
-2. Call the main function i.e. 
+2. Call the main function
 ```
-main:chord_start(100,3).
+main:chord_start(1000,3).
 ```
-where ```100 represents NumberofNodes``` and ```3 represents NumberOfRequests```.
+where ```1000 represents NumberofNodes``` and ```3 represents NumberOfRequests```.
 
-### Code Explanation:
+### Explanation:
 Our project will start from the ```chord_start(TotalNodes,Requests)``` function.<br>
 We will <i>calibrate</i> the total number of spaces in the chord to the highest nearest power of ``` 2^n```.
 ```
@@ -51,9 +51,15 @@ If the <i>specified key isn't available</i> inside the finger table, we will del
 ### Working Objectives:
 1. We are able to establish the chord network
 2. We are able to populate the finger tables for each node (i.e. ActorPid) in the network.
-3. We are able to achieve the communication from starting node to the target node in the chord setup.
+3. Each node is able to send queries to the appropriate node in the network through a series of <i>hops</i>.
 4. We are able to achieve the objective of closest node-id handling the responsibility calls of an inactive node-id.
 
-### Results Explanation:
-
 ### Largest Achievable Network:
+The largest achievable network is of ```1000 nodes``` with average time of ```7.74 (approx) seconds```
+If we take the absolute log time for calculating ```1000 base 2``` we get ```10 seconds```. So our result is close to the absolute threshold value due to long traversal paths.
+
+Result Screenshot:<br>
+<i>Input:</i><br>
+![Alt text](src/resultScreenshot/inputScreenshot.jpg?raw=true "Result")<br>
+<i>Output:</i><br>
+![Alt text](src/resultScreenshot/resultScreenshot.jpg?raw=true "Result")
