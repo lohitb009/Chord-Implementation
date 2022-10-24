@@ -69,4 +69,5 @@ Right now the chord is up and running. Now we are implicitly killing the node af
 Suppose we are right now at the finger table of node P and a message has to be delivered to the node Z. Since node Z is dead actor, in this scenario
 node P will propagate the message to the neighbor that is 1 index below (let say node W is 1 index below than node Z in the finger table) that takes
 responsibility to deliver the message to the best possible alternative node.<br>
+Bonus Zip: https://github.com/lohitb009/Chord-Implementation/blob/main/Project3-Bonus.zip <br>
 Explanation: https://github.com/lohitb009/Chord-Implementation/blob/main/report-bonus.pdf
