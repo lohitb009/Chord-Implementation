@@ -12,22 +12,24 @@
 %% API
 -export([startLink/8, main_loop/8]).
 
+%%CREATING ACTOR IN RING
 startLink(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID) ->
   ActorPid = spawn_link(?MODULE, main_loop, [ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID]),
-  %%% io:format("ActorPID Started At : ~p~n",[ActorPid]),
   ActorPid.
 
 main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID) ->
-%%  io:format("Node is : ~p ~n", [self()]),
   receive
+  %%    POPULATING CONNECTIONS
     {ok, Finger, NdList, Iter} ->
       main_loop(ChordId, Pred, Succ, Finger, TotalSpaces, NdList, Iter, HopCalc_PID);
 
+%%    INSTRUCTION RECEIVED TO START COMMUNICATION
     {send_requests, NumRequests} ->
       IDs = generate_IDs(NumRequests, TotalSpaces, []),
       sendRequests(length(IDs), IDs, NodeList, ArrayID, FT),
       main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID);
 
+%%    MESSAGE STRUCTURE FOR TRANSMISSION
     {messg, Hops, Target_ID} ->
       if
         Target_ID == ChordId ->
@@ -40,7 +42,7 @@ main_loop(ChordId, Pred, Succ, FT, TotalSpaces, NodeList, ArrayID, HopCalc_PID) 
       end
   end.
 
-sendRequests(0, IDs, Nodelist, ArrayID, FT) ->
+sendRequests(0, _, _, _, _) ->
   done;
 sendRequests(Iter, IDs, Nodelist, ArrayID, FT) ->
   Target_ID = find_succ2(lists:nth(Iter, IDs), 1, Nodelist, length(Nodelist) + 1),
@@ -48,7 +50,7 @@ sendRequests(Iter, IDs, Nodelist, ArrayID, FT) ->
   Target_PID ! {messg, 0, lists:nth(1, Target_ID)},
   sendRequests(Iter - 1, IDs, Nodelist, ArrayID, FT).
 
-find_target_pid(Len, Len, Target_ID, FT, Pred_PID, NodeList) ->
+find_target_pid(Len, Len, _, _, Pred_PID, _) ->
   Pred_PID;
 find_target_pid(Iter, Len, Target_ID, FT, Pred_PID, NodeList) ->
   Curr_ID = lists:nth(1, lists:nth(Iter, FT)),
@@ -63,7 +65,7 @@ find_target_pid(Iter, Len, Target_ID, FT, Pred_PID, NodeList) ->
     true -> nothing
   end.
 
-find_succ2(Next_id, Len, NodesList, Len) ->
+find_succ2(_, Len, NodesList, Len) ->
   lists:nth(1, NodesList);
 find_succ2(Next_id, ArrayID, NodesList, Len) ->
   Curr_node = lists:nth(ArrayID, NodesList),
@@ -73,7 +75,7 @@ find_succ2(Next_id, ArrayID, NodesList, Len) ->
     true -> Curr_node
   end.
 
-generate_IDs(0, TotalSpaces, Key_List) ->
+generate_IDs(0, _, Key_List) ->
   Key_List;
 generate_IDs(NumRequests, TotalSpaces, Key_List) ->
   Random_ID = rand:uniform(1000000000),
